@@ -2,31 +2,41 @@ import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { OpenAIEmbeddings } from 'langchain/embeddings';
 import { PineconeStore } from 'langchain/vectorstores';
 import { pinecone } from '@/utils/pinecone-client';
-import { CustomPDFLoader } from '@/utils/customPDFLoader';
 import { PINECONE_INDEX_NAME, PINECONE_NAME_SPACE } from '@/config/pinecone';
-import { DirectoryLoader } from 'langchain/document_loaders';
+import fs from 'fs';
+import readline from 'readline';
 
 /* Name of directory to retrieve your files from */
-const filePath = 'docs';
+const ndjsonFilePath = 'exported_data.ndjson';
 
-export const run = async () => {
-  try {
-    /*load raw docs from the all files in the directory */
-    const directoryLoader = new DirectoryLoader(filePath, {
-      '.pdf': (path) => new CustomPDFLoader(path),
-    });
+async function processNDJSON(filePath: string): Promise<string[]> {
+  const fileStream = fs.createReadStream(filePath);
+  const rl = readline.createInterface({
+    input: fileStream,
+    crlfDelay: Infinity,
+  });
 
-    // const loader = new PDFLoader(filePath);
-    const rawDocs = await directoryLoader.load();
-
-    /* Split text into chunks */
+  let texts = [];
+  for await (const line of rl) {
+    const jsonLine = JSON.parse(line);
+    console.log(jsonLine);
+    console.log(jsonLine._source, 'source');
+    const text = jsonLine._source.body as string;
     const textSplitter = new RecursiveCharacterTextSplitter({
       chunkSize: 1000,
       chunkOverlap: 200,
     });
+    const splitText = await textSplitter.splitText(text);
+    console.log('split text', splitText);
+    // Process the JSON object here
+    texts.push(...splitText);
+  }
+  return texts;
+}
 
-    const docs = await textSplitter.splitDocuments(rawDocs);
-    console.log('split docs', docs);
+export const run = async () => {
+  try {
+    const texts = await processNDJSON(ndjsonFilePath);
 
     console.log('creating vector store...');
     /*create and store the embeddings in the vectorStore*/
@@ -34,7 +44,7 @@ export const run = async () => {
     const index = pinecone.Index(PINECONE_INDEX_NAME); //change to your own index name
 
     //embed the PDF documents
-    await PineconeStore.fromDocuments(docs, embeddings, {
+   await PineconeStore.fromTexts(texts, [], embeddings, {
       pineconeIndex: index,
       namespace: PINECONE_NAME_SPACE,
       textKey: 'text',
