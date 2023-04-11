@@ -14,9 +14,11 @@ Standalone question:`);
 
 const QA_PROMPT = PromptTemplate.fromTemplate(
   `You are an AI assistant providing helpful advice. You are given the following extracted parts of a long document and a question. Provide a conversational answer based on the context provided.
+  The user who has asked the question does not have any knowledge of the 'context' so don't mention the word context or tell the user to look at the context.
 You should only provide hyperlinks that reference the context below. Do NOT make up hyperlinks.
-If you can't find the answer in the context below, just say "Hmm, I'm not sure." Don't try to make up an answer.
-If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to the context.
+If you can't find the answer in the context below, just say "Hmm, I'm not sure about the answer to that question, sorry!." Don't try to make up an answer.
+If the question is not related to the context, politely respond that you are tuned to only answer questions that are related to cruising.
+
 
 Question: {question}
 =========
@@ -55,6 +57,6 @@ export const makeChain = (
     combineDocumentsChain: docChain,
     questionGeneratorChain: questionGenerator,
     returnSourceDocuments: true,
-    k: 2, //number of source documents to return
+    k: 3, //number of source documents to return
   });
 };

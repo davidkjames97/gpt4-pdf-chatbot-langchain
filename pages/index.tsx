@@ -202,6 +202,9 @@ export default function Home() {
                         ? styles.usermessagewaiting
                         : styles.usermessage;
                   }
+                  const docs = message?.sourceDocs;
+                  const doc = docs && docs.length > 0 ? docs[0].metadata : '';
+                  console.log(doc);
                   return (
                     <>
                       <div key={`chatMessage-${index}`} className={className}>
@@ -233,7 +236,7 @@ export default function Home() {
                                       {doc.pageContent}
                                     </ReactMarkdown>
                                     <p className="mt-2">
-                                      <b>Source:</b> {doc.metadata.source}
+                                      <b>Source:</b> <a color='blue' target="_blank" href={doc.metadata.url}>{doc.metadata.title}</a> 
                                     </p>
                                   </AccordionContent>
                                 </AccordionItem>
